@@ -1,0 +1,16 @@
+ozone_site:
+  ozone.scm.block.client.address: n002.hdfs.example.com
+  ozone.scm.names: n002.hdfs.example.com
+  ozone.scm.client.address: n002.hdfs.example.com
+  ozone.om.address: n001.hdfs.example.com
+  ozone.handler.type: distributed
+  ozone.enabled: True
+  ozone.replication: 3
+  ozone.scm.datanode.id.dir: /var/hadoop/datanode
+  dfs.datanode.data.dir: /data/datanode/data
+  dfs.container.ratis.datanode.storage.dir: /data/datanode/ratis
+  ozone.scm.db.dirs: /data/scm/db
+  ozone.om.db.dirs: /data/om/db
+  ozone.om.ratis.storage.dir: /data/om/ratis/storage
+  ozone.om.ratis.snapshot.dir: /data/om/ratis/snapshot
+

@@ -1,0 +1,207 @@
+---
+#------- Initialization common to all hosts ---------------------------------------------------
+  - hosts: all
+    remote_user: root
+
+    vars:
+      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
+      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+
+    tasks:
+    - name: Ensure the hadoop group exists
+      group:
+        name: hadoop
+        state: present
+
+    - name: Ensure the hdfs user exists. The password below is insecure (hdfs).
+      user:
+        name: "hdfs"
+        password: '$6$OD.Syt41QaobNrf6$dAD.HWuFIbLEFqmRBBYm7uF2dbSo/i9MJ7.jMT9Z6aRAOo5PbaDnU7Qv3nOG2AAnUkqXwacznruzq/T8Ywa7g/'
+        groups: hadoop   # Empty by default.
+        state: present
+        shell: /bin/bash       # Defaults to /bin/bash
+        system: no             # Defaults to no
+        createhome: yes        # Defaults to yes
+        home: /home/hdfs       # Defaults to /home/<username>
+
+    - name: Ensure the Ozone install directory exists and is owned by the hdfs user.
+      file:
+        path: "{{ install_base }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0755
+
+    - name: Extract the Ozone tarball.
+      unarchive:
+        src: "{{ ozone_tarball }}"
+        remote_src: no
+        dest: "{{ install_base }}"
+        force: yes
+        owner: hdfs
+        group: hadoop
+
+    - name: Copy ozone-site.xml
+      copy:
+        src: conf/ozone-site.xml
+        dest: "{{ ozone_home }}/etc/hadoop/"
+        force: yes
+        owner: hdfs
+        group: hadoop
+
+    - name: Update JAVA_HOME in hadoop-env.sh
+      lineinfile:
+        path: "{{ ozone_home }}/etc/hadoop/hadoop-env.sh"
+        regexp: "^# export JAVA_HOME="
+        line: "export JAVA_HOME={{ java_home }}"
+
+    - name: Remove old Ozone shell profile, if present
+      file:
+        path: /etc/profile.d/ozone.sh
+        state: absent
+
+    - name: Create an Ozone profile. This adds Ozone shell commands to the path for all users.
+      lineinfile:
+        path: /etc/profile.d/ozone.sh
+        line: 'export PATH="$PATH:{{ ozone_home }}/bin"'
+        state: present
+        create: yes
+
+
+
+#----------- Initialize and start the SCM -------------------------------------------------
+  - hosts: scm
+    remote_user: root
+    vars:
+      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
+      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+
+    tasks:
+    - name: Include ozone-site.xml vars
+      include_vars:
+        file: conf/ozone-site.yaml
+        name: ozone_site
+
+    - name: Ensure directory for SCM DB exists
+      file:
+        path: "{{ ozone_site['ozone_site']['ozone.scm.db.dirs'] }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0700
+
+    - name: Initialize (format) the SCM. This is a no-op if already initialized.
+      command: bin/ozone scm --init
+      become: yes
+      become_user: hdfs
+      args:
+        chdir: "{{ ozone_home }}"
+
+    - name: Start the SCM
+      command: bin/ozone --debug --daemon start scm
+      become: yes
+      become_user: hdfs
+      async: 60       # Ansible seems to disconnect too early, before the process is complete.
+      poll: 1
+      args:
+        chdir: "{{ ozone_home }}"
+
+#----------- Initialize and start the OM --------------------------------------------------
+  - hosts: om
+    remote_user: root
+    vars:
+      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
+      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+
+    tasks:
+    - name: Include ozone-site.xml vars
+      include_vars:
+        file: conf/ozone-site.yaml
+        name: ozone_site
+
+    - name: Ensure directory for OM DB exists
+      file:
+        path: "{{ ozone_site['ozone_site']['ozone.om.db.dirs'] }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0700
+
+    - name: Ensure directory for OM Ratis log exists
+      file:
+        path: "{{ ozone_site['ozone_site']['ozone.om.ratis.storage.dir'] }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0700
+
+    - name: Ensure directory for OM Ratis snapshots exists
+      file:
+        path: "{{ ozone_site['ozone_site']['ozone.om.ratis.snapshot.dir'] }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0700
+
+    - name: Initialize (format) the OM. This is a no-op if already initialized.
+      command: bin/ozone om --init
+      become: yes
+      become_user: hdfs
+      args:
+        chdir: "{{ ozone_home }}"
+
+    - name: Start the OM
+      command: bin/ozone --daemon start om
+      become: yes
+      become_user: hdfs
+      async: 60
+      poll: 1
+      args:
+        chdir: "{{ ozone_home }}"
+
+#----------- Initialize and start the DataNodes --------------------------------------------------
+  - hosts: datanodes
+    remote_user: root
+    vars:
+      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
+      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+
+    tasks:
+    - name: Include ozone-site.xml vars
+      include_vars:
+        file: conf/ozone-site.yaml
+        name: ozone_site
+
+    - name: Ensure directory for datanode.id file exists (ozone.scm.datanode.id.dir)
+      file:
+        path: "{{ ozone_site['ozone_site']['ozone.scm.datanode.id.dir'] }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0700
+
+    - name: Ensure directory for Datanode storage exists
+      file:
+        path: "{{ ozone_site['ozone_site']['dfs.datanode.data.dir'] }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0700
+
+    - name: Ensure directory for Datanode Ratis Log exists
+      file:
+        path: "{{ ozone_site['ozone_site']['dfs.container.ratis.datanode.storage.dir'] }}"
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: 0700
+
+    - name: Start the datanodes
+      command: bin/ozone --daemon start datanode
+      become: yes
+      become_user: hdfs
+      async: 60
+      poll: 1
+      args:
+        chdir: "{{ ozone_home }}"
+
