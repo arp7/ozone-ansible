@@ -1,0 +1,23 @@
+<configuration>
+<properties>
+<!--The basics -->
+<property><name>ozone.scm.block.client.address</name><value>n002.hdfs.example.com</value></property>
+<property><name>ozone.scm.names</name><value>n002.hdfs.example.com</value></property>
+<property><name>ozone.scm.client.address</name><value>n002.hdfs.example.com</value></property>
+<property><name>ozone.om.address</name><value>n001.hdfs.example.com</value></property>
+<property><name>ozone.handler.type</name><value>distributed</value></property>
+<property><name>ozone.enabled</name><value>True</value></property>
+<property><name>ozone.replication</name><value>3</value></property>
+
+
+<!-- Storage directories. Specify everything, and don't use any defaults -->
+<property><name>ozone.scm.datanode.id.dir</name><value>/var/hadoop/datanode</value></property>
+<property><name>dfs.datanode.data.dir</name><value>/data/datanode/data</value></property>
+<property><name>dfs.container.ratis.datanode.storage.dir</name><value>/data/datanode/ratis</value></property>
+<property><name>ozone.scm.db.dirs</name><value>/data/scm/db</value></property>
+<property><name>ozone.om.db.dirs</name><value>/data/om/db</value></property>
+<property><name>ozone.om.ratis.storage.dir</name><value>/data/om/ratis/storage</value></property>
+<property><name>ozone.om.ratis.snapshot.dir</name><value>/data/om/ratis/snapshot</value></property>
+</properties>
+</configuration>
+
