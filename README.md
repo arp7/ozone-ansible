@@ -14,7 +14,7 @@ For production clusters or anytime you care about data persistence or performanc
 
 ### Run the playbook
 ```
-ansible-playbook -i hosts install-ozone.yaml -v
+ansible-playbook -i hosts.yaml install-ozone.yaml -v
 ```
 The `-v` option enables verbose logging which is useful for debugging when things go wrong.
 
