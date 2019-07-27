@@ -1,0 +1,40 @@
+# Change the following three settings as appropriate.
+#
+install_base: /opt/hadoop
+java_home: /usr/java/latest
+ozone_tarball: ozone-0.5.0-SNAPSHOT.tar.gz
+
+ozone_site:
+  # Change these depending on your OM and SCM hostnames.
+  #
+  ozone.om.address: n001.hdfs.example.com
+  ozone.scm.names: n002.hdfs.example.com
+
+  # Define all the data and meta directories explicitly. Don't pick defaults
+  # for anything if you care about durability and performance.
+  # You should modify these locations depending on your disk configuration.
+  #
+  ozone.om.db.dirs: /data/om/db                  # SSD strongly recommended.
+  ozone.om.ratis.storage.dir: /data/om/ratis/storage
+  ozone.om.ratis.snapshot.dir: /data/om/ratis/snapshot
+  ozone.scm.db.dirs: /data/scm/db
+  ozone.scm.datanode.id.dir: /var/hadoop/datanode
+  dfs.datanode.data.dir: /data/datanode/data
+  dfs.container.ratis.datanode.storage.dir: /data/datanode/ratis
+
+  # Sane defaults for all Ozone clusters. Don't modify these unless you
+  # know exactly what you are doing.
+  #
+  ozone.enabled: True
+  ozone.handler.type: distributed
+  ozone.replication: 3
+
+  # Add your custom ozone-site.xml settings below...
+  #
+
+
+# DO NOT MODIFY the following lines.
+#
+extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
+ozone_home: "{{ install_base }}/{{ extract_dir }}"
+

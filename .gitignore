@@ -1,1 +1,4 @@
 **/ozone*.tar.gz
+/conf/auto_generated/*.properties
+/conf/auto_generated/*.sh
+/conf/auto_generated/*.xml

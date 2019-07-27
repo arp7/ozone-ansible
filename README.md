@@ -1,26 +1,24 @@
-Very preliminary Ansible playbook to install [Ozone](https://hadoop.apache.org/ozone/) on a cluster.
+Very preliminary Ansible playbook to install [Apache Hadoop Ozone](https://hadoop.apache.org/ozone/) on a cluster.
 
-# Install Ozone
+## Install Ozone
+Follow the steps below to deploy your Ozone cluster.
 
-## Initialize the Inventory File
-_Inventory_ is a fancy Ansible name for the `hosts.yaml` file which contains a list of hosts grouped by role. The format of the file is self-documenting, see the included sample file.
+### Edit the hosts.yaml file
+The `hosts.yaml` contains a list of hosts grouped by role. The format of the included template file is self-documenting.
 
-The hosts file also defines some key variables like `ozone_tarball` and `java_home`.
+### Edit conf/settings.yaml
+Edit the `conf/cluster-settings.yaml` template file. At the very least, you will need to modify the OM and SCM hostnames, the Ozone tarball file name, and the java_home location.
 
-You don't have to define variables in the inventory file. They can also be passed on the command-line when invoking the playbook using the `ansible-playbook --extra-vars=` option. However it is generally more convenient to define them in the inventory file.
+For production clusters or anytime you care about data persistence or performance, you should also edit the storage and metadata directory locations.
 
-## Create ozone-site.xml and ozone-site.yaml
-Create the ozone-site.xml and ozone-site.yaml files under `conf/`. The file contents must be in sync. This does require some manual duplication effort for the configuration settings and is a bit clunky. It will be fixed soon.
 
-_TODO: Generate ozone-site.xml automatically from ozone-site.yaml_
-
-## Run the playbook
+### Run the playbook
 ```
 ansible-playbook -i hosts install-ozone.yaml -v
 ```
 The `-v` option enables verbose logging which is useful for debugging when things go wrong.
 
-# Stop all Ozone services.
+## Stop all Ozone services.
 Ozone services can be stopped using the following ad-hoc command. This kills all processes running as the `hdfs` user.
 ```
 ansible --inventory=hosts.yaml  all -m shell -a 'pkill -u hdfs'

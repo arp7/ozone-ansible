@@ -1,11 +1,18 @@
 ---
-#------- Initialization common to all hosts ---------------------------------------------------
+  - hosts: 127.0.0.1
+    connection: local
+    tasks:
+    - name: Generate ozone-site.xml from ozone-site.yaml
+      make_hadoop_xml:
+        source_yaml: conf/settings.yaml
+        dest_xml: conf/auto_generated/ozone-site.xml
+        site_name: ozone_site
+
+#------- Initialization common to all hosts ---------------------------------
   - hosts: all
     remote_user: root
-
-    vars:
-      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
-      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+    vars_files:
+      - conf/settings.yaml
 
     tasks:
     - name: Ensure the hadoop group exists
@@ -43,7 +50,7 @@
 
     - name: Copy ozone-site.xml
       copy:
-        src: conf/ozone-site.xml
+        src: conf/auto_generated/ozone-site.xml
         dest: "{{ ozone_home }}/etc/hadoop/"
         force: yes
         owner: hdfs
@@ -69,22 +76,16 @@
 
 
 
-#----------- Initialize and start the SCM -------------------------------------------------
+#----------- Initialize and start the SCM ------------------------------------
   - hosts: scm
     remote_user: root
-    vars:
-      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
-      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+    vars_files:
+      - conf/settings.yaml
 
     tasks:
-    - name: Include ozone-site.xml vars
-      include_vars:
-        file: conf/ozone-site.yaml
-        name: ozone_site
-
     - name: Ensure directory for SCM DB exists
       file:
-        path: "{{ ozone_site['ozone_site']['ozone.scm.db.dirs'] }}"
+        path: "{{ ozone_site['ozone.scm.db.dirs'] }}"
         state: directory
         owner: hdfs
         group: hadoop
@@ -101,27 +102,21 @@
       command: bin/ozone --debug --daemon start scm
       become: yes
       become_user: hdfs
-      async: 60       # Ansible seems to disconnect too early, before the process is complete.
+      async: 60       # Prevent SCM process from getting SIGHUP too soon.
       poll: 1
       args:
         chdir: "{{ ozone_home }}"
 
-#----------- Initialize and start the OM --------------------------------------------------
+#----------- Initialize and start the OM -------------------------------------
   - hosts: om
     remote_user: root
-    vars:
-      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
-      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+    vars_files:
+      - conf/settings.yaml
 
     tasks:
-    - name: Include ozone-site.xml vars
-      include_vars:
-        file: conf/ozone-site.yaml
-        name: ozone_site
-
     - name: Ensure directory for OM DB exists
       file:
-        path: "{{ ozone_site['ozone_site']['ozone.om.db.dirs'] }}"
+        path: "{{ ozone_site['ozone.om.db.dirs'] }}"
         state: directory
         owner: hdfs
         group: hadoop
@@ -129,7 +124,7 @@
 
     - name: Ensure directory for OM Ratis log exists
       file:
-        path: "{{ ozone_site['ozone_site']['ozone.om.ratis.storage.dir'] }}"
+        path: "{{ ozone_site['ozone.om.ratis.storage.dir'] }}"
         state: directory
         owner: hdfs
         group: hadoop
@@ -137,7 +132,7 @@
 
     - name: Ensure directory for OM Ratis snapshots exists
       file:
-        path: "{{ ozone_site['ozone_site']['ozone.om.ratis.snapshot.dir'] }}"
+        path: "{{ ozone_site['ozone.om.ratis.snapshot.dir'] }}"
         state: directory
         owner: hdfs
         group: hadoop
@@ -154,27 +149,21 @@
       command: bin/ozone --daemon start om
       become: yes
       become_user: hdfs
-      async: 60
+      async: 60     # Prevent OM process from getting SIGHUP too soon.
       poll: 1
       args:
         chdir: "{{ ozone_home }}"
 
-#----------- Initialize and start the DataNodes --------------------------------------------------
+#----------- Initialize and start the DataNodes ------------------------------
   - hosts: datanodes
     remote_user: root
-    vars:
-      extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
-      ozone_home: "{{ install_base }}/{{ extract_dir }}"
+    vars_files:
+      - conf/settings.yaml
 
     tasks:
-    - name: Include ozone-site.xml vars
-      include_vars:
-        file: conf/ozone-site.yaml
-        name: ozone_site
-
     - name: Ensure directory for datanode.id file exists (ozone.scm.datanode.id.dir)
       file:
-        path: "{{ ozone_site['ozone_site']['ozone.scm.datanode.id.dir'] }}"
+        path: "{{ ozone_site['ozone.scm.datanode.id.dir'] }}"
         state: directory
         owner: hdfs
         group: hadoop
@@ -182,7 +171,7 @@
 
     - name: Ensure directory for Datanode storage exists
       file:
-        path: "{{ ozone_site['ozone_site']['dfs.datanode.data.dir'] }}"
+        path: "{{ ozone_site['dfs.datanode.data.dir'] }}"
         state: directory
         owner: hdfs
         group: hadoop
@@ -190,7 +179,7 @@
 
     - name: Ensure directory for Datanode Ratis Log exists
       file:
-        path: "{{ ozone_site['ozone_site']['dfs.container.ratis.datanode.storage.dir'] }}"
+        path: "{{ ozone_site['dfs.container.ratis.datanode.storage.dir'] }}"
         state: directory
         owner: hdfs
         group: hadoop
@@ -200,7 +189,7 @@
       command: bin/ozone --daemon start datanode
       become: yes
       become_user: hdfs
-      async: 60
+      async: 60       # Prevent DataNode process from getting SIGUP too soon.
       poll: 1
       args:
         chdir: "{{ ozone_home }}"
