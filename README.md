@@ -1,5 +1,5 @@
 ## Introduction
-[Ansible](https://www.ansible.com/resources/videos/quick-start-video) is an agent-less provisioning and deployment tool. We provide an Ansible platbook, custom module and config file templates to deploy Ozone to an arbitrarily large cluster.
+[Ansible](https://www.ansible.com/resources/videos/quick-start-video) is an agent-less provisioning and deployment tool. We provide an Ansible playbook, custom module and config file templates to deploy Ozone to an arbitrarily large cluster.
 
 All you need is ssh access to the cluster for the `root` user, and Ansible installed on a control node. The control node may be one of the nodes in your cluster or an external node.
 
