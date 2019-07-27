@@ -3,10 +3,14 @@
     connection: local
     tasks:
     - name: Generate ozone-site.xml from ozone-site.yaml
+      tags:
+        - generate
       make_hadoop_xml:
         source_yaml: conf/settings.yaml
         dest_xml: conf/auto_generated/ozone-site.xml
         site_name: ozone_site
+        om_hosts: "{{ groups['om'] }}"
+        scm_hosts: "{{ groups['scm'] }}"
 
 #------- Initialization common to all hosts ---------------------------------
   - hosts: all

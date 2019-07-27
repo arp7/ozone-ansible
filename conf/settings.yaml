@@ -5,10 +5,13 @@ java_home: /usr/java/latest
 ozone_tarball: ozone-0.5.0-SNAPSHOT.tar.gz
 
 ozone_site:
-  # Change these depending on your OM and SCM hostnames.
+  # It is optional to define OM and SCM hosts here. By default they
+  # are picked up from the inventory. You may want to define them
+  # here if any of the OM/SCM RPC endpoints are using non-default
+  # port numbers.
   #
-  ozone.om.address: n001.hdfs.example.com
-  ozone.scm.names: n002.hdfs.example.com
+  # ozone.om.address: 
+  # ozone.scm.names:
 
   # Define all the data and meta directories explicitly. Don't pick defaults
   # for anything if you care about durability and performance.

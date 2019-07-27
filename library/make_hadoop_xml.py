@@ -61,29 +61,50 @@ def main():
     fields = {
             "source_yaml": {"required": True, "type": "str"},
             "dest_xml": {"required": True, "type": "str"},
-            "site_name": {"required": True, "type": "str"}
+            "site_name": {"required": True, "type": "str"},
+            "om_hosts": {"required": True, "type": "list"},
+            "scm_hosts": {"required": True, "type": "list"}
     }
 
     module = AnsibleModule(argument_spec=fields)
     make_xml(source=module.params["source_yaml"],
             dest=module.params["dest_xml"],
-            site_name=module.params["site_name"])
+            site_name=module.params["site_name"],
+            om_hosts=module.params["om_hosts"],
+            scm_hosts=module.params["scm_hosts"])
     module.exit_json(changed=True,
             msg="Generated XML file {}".format(module.params["dest_xml"]))
 
-def make_xml(source=None, dest=None, site_name=None):
+def make_xml(source=None, dest=None, site_name=None,
+        om_hosts=None, scm_hosts=None):
     with open(dest, "w") as f:
         f.write(xml_header)
-        write_yaml_fields(source, f, site_name)
+        write_yaml_fields(source, f, site_name, om_hosts, scm_hosts)
         f.write(xml_footer)
 
 
-def write_yaml_fields(source=None, f=None, site_name=None):
+def write_yaml_fields(source=None, f=None, site_name=None,
+        om_hosts=None, scm_hosts=None):
     with open(source, "r") as y:
         content = yaml.safe_load(y)
     settings = content[site_name]
+
+    # If OM host was not defined in ozone_site, then pick the hostnames
+    # from the inventory
+    if "ozone.om.address" not in settings:
+        f.write(property_tag_template.format("ozone.om.address",
+            ",".join(om_hosts)))
+
+    # If SCM host was not defined in ozone_site, then pick the hostnames
+    # from the inventory
+    if "ozone.scm.names" not in settings:
+        f.write(property_tag_template.format("ozone.scm.names",
+            ",".join(scm_hosts)))
+
+    # Write everything else
+    #
     for name, value in settings.items():
-        f.write(property_tag_template.format( name, value))
+        f.write(property_tag_template.format(name, value))
 
 if __name__ == '__main__':
     main()
