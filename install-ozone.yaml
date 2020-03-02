@@ -118,29 +118,17 @@
       - conf/settings.yaml
 
     tasks:
-    - name: Ensure directory for OM DB exists
+    - name: Ensure directories for OM DB, OM Ratis log, and OM Ratis snapshots exist.
       file:
-        path: "{{ ozone_site['ozone.om.db.dirs'] }}"
+        path: "{{ item }}"
         state: directory
         owner: hdfs
         group: hadoop
         mode: 0700
-
-    - name: Ensure directory for OM Ratis log exists
-      file:
-        path: "{{ ozone_site['ozone.om.ratis.storage.dir'] }}"
-        state: directory
-        owner: hdfs
-        group: hadoop
-        mode: 0700
-
-    - name: Ensure directory for OM Ratis snapshots exists
-      file:
-        path: "{{ ozone_site['ozone.om.ratis.snapshot.dir'] }}"
-        state: directory
-        owner: hdfs
-        group: hadoop
-        mode: 0700
+      loop:
+        - "{{ ozone_site['ozone.om.db.dirs'] }}"
+        - "{{ ozone_site['ozone.om.ratis.storage.dir'] }}"
+        - "{{ ozone_site['ozone.om.ratis.snapshot.dir'] }}"
 
     - name: Initialize (format) the OM. This is a no-op if already initialized.
       command: bin/ozone om --init
@@ -165,35 +153,40 @@
       - conf/settings.yaml
 
     tasks:
-    - name: Ensure directory for datanode.id file exists (ozone.scm.datanode.id.dir)
+    - name: Ensure datanode.id dir, storage dirs, and Ratis log dir all exist.
       file:
-        path: "{{ ozone_site['ozone.scm.datanode.id.dir'] }}"
+        path: "{{ item }}"
         state: directory
         owner: hdfs
         group: hadoop
         mode: 0700
-
-    - name: Ensure directory for Datanode storage exists
-      file:
-        path: "{{ ozone_site['dfs.datanode.data.dir'] }}"
-        state: directory
-        owner: hdfs
-        group: hadoop
-        mode: 0700
-
-    - name: Ensure directory for Datanode Ratis Log exists
-      file:
-        path: "{{ ozone_site['dfs.container.ratis.datanode.storage.dir'] }}"
-        state: directory
-        owner: hdfs
-        group: hadoop
-        mode: 0700
+      loop:
+        - "{{ ozone_site['ozone.scm.datanode.id.dir'] }}"
+        - "{{ ozone_site['dfs.datanode.data.dir'] }}"
+        - "{{ ozone_site['dfs.container.ratis.datanode.storage.dir'] }}"
 
     - name: Start the datanodes
       command: bin/ozone --daemon start datanode
       become: yes
       become_user: hdfs
       async: 60       # Prevent DataNode process from getting SIGUP too soon.
+      poll: 1
+      args:
+        chdir: "{{ ozone_home }}"
+
+
+#----------- Start the S3 Gateways ------------------------------
+  - hosts: s3gateways
+    remote_user: root
+    vars_files:
+      - conf/settings.yaml
+
+    tasks:
+    - name: Start the S3 Gateway processes
+      command: bin/ozone --daemon start s3g
+      become: yes
+      become_user: hdfs
+      async: 60       # Prevent the process from getting SIGUP too soon.
       poll: 1
       args:
         chdir: "{{ ozone_home }}"

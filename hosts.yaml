@@ -18,3 +18,9 @@ datanodes:
     n001.hdfs.example.com:
     n002.hdfs.example.com:
     n003.hdfs.example.com:
+
+s3gateways:
+  hosts:
+    n001.hdfs.example.com:
+    n002.hdfs.example.com:
+    n003.hdfs.example.com:
