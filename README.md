@@ -9,7 +9,7 @@ All you need is ssh access to the cluster for the `root` user, and Ansible insta
 A template `hosts.yaml` file is provided. It contains a list of hosts grouped by role. The format of the included template file is (hopefully) self-documenting.
 
 #### 2. Edit conf/settings.yaml
-Edit the `conf/cluster-settings.yaml` template file. At the very least, you will need to specify the Ozone tarball file name and the `JAVA_HOME` location.
+Edit the `conf/settings.yaml` template file. At the very least, you will need to specify the Ozone tarball file name and the `JAVA_HOME` location.
 
 For production clusters or anytime you care about data persistence or performance, you should also edit the storage and metadata directory locations.
 
