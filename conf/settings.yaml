@@ -2,7 +2,7 @@
 #
 install_base: /opt/hadoop
 java_home: /usr/java/latest
-ozone_tarball: ozone-0.5.0-SNAPSHOT.tar.gz
+ozone_tarball: hadoop-ozone-0.5.0-SNAPSHOT.tar.gz
 
 ozone_site:
   # It is optional to define OM and SCM hosts here. By default they
@@ -36,8 +36,17 @@ ozone_site:
   #
 
 
+# --------------------------------------------------------------------------------------------------
+#
 # DO NOT MODIFY the following lines.
 #
-extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') }}"
+
+# We remove the leading hadoop- from the tarball name when generating the
+# extract_dir, since that is how the tarball extracts. This has changed
+# across Ozone releases and may change again, in that case we may need to
+# change it again. This is admittedly fragile and we may need more robust logic
+# here.
+#
+extract_dir: "{{ ozone_tarball | basename | regex_replace('(.tar.gz|.tar.bz2|.tar.xz|.tgz|.tar)$', '') | regex_replace('^hadoop-', '') }}"
 ozone_home: "{{ install_base }}/{{ extract_dir }}"
 
